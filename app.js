@@ -17,8 +17,8 @@ const testResultsRouter = require('./routes/testResults');
 const orderRouter = require('./routes/orders');
 const broadcastMessages = require('./routes/broadcastMessages');
 const supportMessages = require('./routes/supportMessages');
-const { Message } = require('./models/messages');
-const { User, } = require('./models/users');
+const { Message, Chat } = require('./models/messages');
+const { User } = require('./models/users');
 const checkAuth = require('./middleware/chcek-auth');
 const multer = require('multer');
 var moment = require('jalali-moment');
@@ -99,21 +99,47 @@ io.on('connection', socket => {
         User.findOneAndUpdate({ _id: socket.username }, { connection: Date.now() }).exec()
     });
     socket.on('chatMessage', async msg => {
-        console.log(msg)
-        const message = new Message({
-            message: msg.message,
-            user: msg.user,
-            sender: msg.sender,
-            type: msg.type,
-            filePath: msg.filePath,
-            date: msg.date
-        });
-        message.save().then(res => {
-            console.log(res)
-            io.emit('message', res['_id'])
-        }).catch(err => {
-            console.log(err)
-        });
+        console.log(msg.chat)
+        if (msg.chat === "new") {
+            const chat = new Chat({ users: ['63b81a7db6592724c84ea0dd', '63b9bc71e65b428bcce25c2e'] });
+            chat.save().then(result => {
+                const message = new Message({
+                    message: msg.message,
+                    user: msg.user,
+                    chat: result['_id'],
+                    sender: msg.sender,
+                    type: msg.type,
+                    filePath: msg.filePath,
+                    date: msg.date
+                });
+                message.save().then(res => {
+                    console.log(res)
+                    io.emit('message', res['_id'])
+                }).catch(err => {
+                    console.log(err)
+                });
+            }).catch(err => {
+                console.log(err);
+            });
+        } else {
+            console.log('old')
+            const message = new Message({
+                message: msg.message,
+                user: msg.user,
+                chat: msg.chat,
+                sender: msg.sender,
+                type: msg.type,
+                filePath: msg.filePath,
+                date: msg.date
+            });
+            message.save().then(res => {
+                console.log(res)
+                io.emit('message', res['_id'])
+            }).catch(err => {
+                console.log(err)
+            });
+        }
+
 
     });
     socket.on('deleteChat', msg => {
@@ -212,9 +238,9 @@ app.post(`${api}/messages/audio`, audioUpload.single('file'), /*checkAuth,*/(req
     res.status(201).json({ "path": req.file.path });
 });
 
-app.use(`${api}/messages/:id`, checkAuth, (req, res) => {
+app.use(`${api}/chats/`, checkAuth, (req, res) => {
     // const sender = req.userData.userId;
-    Message.find().or({ $or: [{ user: req.params.id }, { sender: req.params.id }] }).populate("user sender", '-passwordHash -__v').lean().exec()
+    Chat.find({'users': req.userData.userId}).lean().exec()
         .then(result => {
             if (result.length >= 1) {
                 result.forEach((element, index) => {
@@ -223,62 +249,25 @@ app.use(`${api}/messages/:id`, checkAuth, (req, res) => {
                 });
                 res.status(200).json({ success: true, data: result });
             } else {
-                res.status(404).json({ success: false, message: "No content" });
+                res.status(204);
             }
         })
         .catch(err => {
-            res.status(404).json({ success: false, message: "Error getting the messages" });
+            res.status(404).json({ success: false, message: "Error getting the messages" , error: err});
         });
 });
 
-app.use(`${api}/messages/`, checkAuth, (req, res) => {
-    const id = req.userData.userId;
-    Message.find({ $or: [{ sender: id }, { user: id }] }).populate("user sender", '-passwordHash -__v').lean().exec()
+app.use(`${api}/messages/:id`, checkAuth, (req, res) => {
+    console.log(req.params.id)
+    Message.find({'chat':req.params.id}).exec()
         .then(result => {
             if (result.length >= 1) {
-                data = [];
                 result.forEach((element, index) => {
                     const d = new Date(element['date']);
                     element['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
-                    if (element['sender']["_id"] == id) {
-                        if (element['status'] != 'read') {
-                            Message.findByIdAndUpdate(element["_id"], { status: 'delivered' })
-                        }
-                        if (element['user']['connection'] != 'online') {
-                            // console.log(parseInt(element['user']['connection']))
-                            const newTimem = new Date(parseInt(element['user']['connection']))
-                            console.log(newTimem)
-                            console.log(new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(newTimem))
-                            // element['user']['connection'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(newTimem)
-                        }
-                        result[index] = { ...result[index], 'isSender': true };
-                        delete result[index].sender;
-                    } else {
-                        delete result[index].user;
-                        temp = result[index].sender;
-                        result[index] = { ...result[index], 'user': temp };
-                        delete result[index].sender;
-                        result[index] = { ...result[index], 'isSender': false };
-                    }
-
+                    console.log(element['date']);
                 });
-                // console.log(result[1].user._id)
-                // const uniqueAuthors = result.reduce((accumulator, current) => {
-                //     if (!accumulator.find((item) => item.user._id === item.user._id)) {
-                //         accumulator.push(current);
-                //     }
-                //     return accumulator;
-                // }, []);
-                // console.log(uniqueAuthors)
-                // const uniqueAuthors2 = [...new Map(result.map(v => [v.user._id, v])).values()]
-                // console.log(uniqueAuthors2)
-                const uniqueAuthors3 = result.filter((value, index, self) =>
-                    index === self.findIndex((t) => (
-                        t.user._id === value.user._id
-                    ))
-                )
-                // console.log(uniqueAuthors3)
-                res.status(200).json({ success: true, data: uniqueAuthors3 });
+                res.status(200).json({ success: true, data: result });
             } else {
                 res.status(404).json({ success: false, message: "No content" });
             }
