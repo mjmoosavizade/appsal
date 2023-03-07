@@ -86,7 +86,7 @@ mongoose.set('useCreateIndex', true);
 // Socket.io
 
 io.on('connection', socket => {
-    console.log('Socket connected');
+    // console.log('Socket connected');
     socket.on('storeClientInfo', data => {
         console.log(data.customId);
         socket.username = data.customId;
