@@ -240,26 +240,53 @@ app.post(`${api}/messages/audio`, audioUpload.single('file'), /*checkAuth,*/(req
 
 app.use(`${api}/chats/`, checkAuth, (req, res) => {
     // const sender = req.userData.userId;
-    Chat.find({'users': req.userData.userId}).lean().exec()
+    Chat.find({ 'users': req.userData.userId })
+        .lean()
+        .populate({ path: 'messages', options: { sort: { 'date': -1 }, limit: 1 } })
+        .populate('users')
+        .exec()
+        .then(result => {
+            if (result.length >= 1) {
+                // result.forEach((element, index) => {
+                //     const d = new Date(element['date']);
+                //     element['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
+                // });
+                var sortedArray = result.sort(function (a, b) {
+                    return b.messages[0].date - a.messages[0].sortedArray
+                });
+                res.status(200).json({ success: true, data: sortedArray });
+            } else {
+                res.status(204);
+            }
+        })
+    // .catch(err => {
+    //     res.status(500).json({ success: false, message: "Error getting the messages", error: err });
+    // });
+});
+
+app.use(`${api}/messages/:id`, checkAuth, (req, res) => {
+    console.log(req.params.id)
+    Message.find({ 'chat': req.params.id }).exec()
         .then(result => {
             if (result.length >= 1) {
                 result.forEach((element, index) => {
                     const d = new Date(element['date']);
                     element['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
+                    console.log(element['date']);
                 });
-                res.status(200).json({ success: true, data: result });
+                res.status(200).json({ success: true, data: result[0] });
             } else {
-                res.status(204);
+                res.status(404).json({ success: false, message: "No content" });
             }
         })
         .catch(err => {
-            res.status(404).json({ success: false, message: "Error getting the messages" , error: err});
+            res.status(404).json({ success: false, message: "Error getting the messages" });
         });
 });
 
-app.use(`${api}/messages/:id`, checkAuth, (req, res) => {
+app.use(`${api}/last-message/:id`, checkAuth, (req, res) => {
     console.log(req.params.id)
-    Message.find({'chat':req.params.id}).exec()
+    Message.find({ 'chat': req.params.id }).sort({ 'date': -1 }).exec()
         .then(result => {
             if (result.length >= 1) {
                 result.forEach((element, index) => {

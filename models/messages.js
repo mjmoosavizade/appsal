@@ -17,6 +17,11 @@ const chatSchema = mongoose.Schema({
     date: { type: Date, default: Date.now, },
 });
 
+chatSchema.virtual('messages', {
+    ref: 'Messages',
+    localField: '_id',
+    foreignField: 'chat'
+  });
 
 exports.Message = mongoose.model('Messages', messageSchema);
 exports.Chat = mongoose.model ('Chat', chatSchema);
