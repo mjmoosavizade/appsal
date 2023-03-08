@@ -250,10 +250,10 @@ app.use(`${api}/chats`, checkAuth, (req, res) => {
         .exec()
         .then(result => {
             if (result.length >= 1) {
-                // result.forEach((element, index) => {
-                //     const d = new Date(element['date']);
-                //     element['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
-                // });
+                result.forEach((element, index) => {
+                    const d = new Date(element['messages'][0]['date']);
+                    element['messages'][0]['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
+                });
 
                 res.status(200).json({ success: true, data: result });
             } else {
