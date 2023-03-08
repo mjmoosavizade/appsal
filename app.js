@@ -251,7 +251,7 @@ app.use(`${api}/chats`, checkAuth, (req, res) => {
         .then(result => {
             if (result.length >= 1) {
                 result.forEach((element, index) => {
-                    if (element['messages'][0]['date']) {
+                    if (element['messages'].length >= 1) {
                         const d = new Date(element['messages'][0]['date']);
                         element['messages'][0]['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
                     }
