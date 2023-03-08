@@ -275,7 +275,7 @@ app.use(`${api}/messages/:id`, checkAuth, (req, res) => {
                     element['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
                     console.log(element['date']);
                 });
-                res.status(200).json({ success: true, data: result[0] });
+                res.status(200).json({ success: true, data: result });
             } else {
                 res.status(404).json({ success: false, message: "No content" });
             }
