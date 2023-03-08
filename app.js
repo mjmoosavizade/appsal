@@ -238,8 +238,10 @@ app.post(`${api}/messages/audio`, audioUpload.single('file'), /*checkAuth,*/(req
     res.status(201).json({ "path": req.file.path });
 });
 
-app.use(`${api}/chats/`, checkAuth, (req, res) => {
-    // const sender = req.userData.userId;
+app.use(`${api}/chats`, checkAuth, (req, res) => {
+
+    console.log('chechk');
+    
     Chat.find({ 'users': req.userData.userId })
         .lean()
         .populate({ path: 'messages', options: { sort: { 'date': -1 }, limit: 1 } })
@@ -251,17 +253,15 @@ app.use(`${api}/chats/`, checkAuth, (req, res) => {
                 //     const d = new Date(element['date']);
                 //     element['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
                 // });
-                var sortedArray = result.sort(function (a, b) {
-                    return b.messages[0].date - a.messages[0].sortedArray
-                });
-                res.status(200).json({ success: true, data: sortedArray });
+
+                res.status(200).json({ success: true, data: result });
             } else {
                 res.status(204);
             }
         })
-    // .catch(err => {
-    //     res.status(500).json({ success: false, message: "Error getting the messages", error: err });
-    // });
+    .catch(err => {
+        res.status(500).json({ success: false, message: "Error getting the messages", error: err });
+    });
 });
 
 app.use(`${api}/messages/:id`, checkAuth, (req, res) => {
