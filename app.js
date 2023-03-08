@@ -251,8 +251,10 @@ app.use(`${api}/chats`, checkAuth, (req, res) => {
         .then(result => {
             if (result.length >= 1) {
                 result.forEach((element, index) => {
-                    const d = new Date(element['messages'][0]['date']);
-                    element['messages'][0]['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
+                    if (element['messages'][0]['date']) {
+                        const d = new Date(element['messages'][0]['date']);
+                        element['messages'][0]['date'] = new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(d)
+                    }
                 });
 
                 res.status(200).json({ success: true, data: result });
