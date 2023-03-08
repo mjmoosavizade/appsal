@@ -99,9 +99,9 @@ io.on('connection', socket => {
         User.findOneAndUpdate({ _id: socket.username }, { connection: Date.now() }).exec()
     });
     socket.on('chatMessage', async msg => {
-        console.log(msg.chat)
+        console.log(msg)
         if (msg.chat === "new") {
-            const chat = new Chat({ users: ['63b81a7db6592724c84ea0dd', '63b9bc71e65b428bcce25c2e'] });
+            const chat = new Chat({ users: [msg.user, msg.sender] });
             chat.save().then(result => {
                 const message = new Message({
                     message: msg.message,
