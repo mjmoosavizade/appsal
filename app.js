@@ -103,6 +103,7 @@ io.on('connection', socket => {
         if (msg.chat === "new") {
             const chat = new Chat({ users: [msg.user, msg.sender] });
             chat.save().then(result => {
+                console.log(result);
                 const message = new Message({
                     message: msg.message,
                     user: msg.user,
